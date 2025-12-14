@@ -1,5 +1,6 @@
 # Houdini ML Glue
 
+```
 /Houdini-ML-Glue
 |
 ├── /docs                         # Technical documentation and contributor guides
@@ -26,3 +27,4 @@
 ├── setup.py                      # For installing the Python/PyTorch wrappers
 ├── requirements.txt              # PyTorch/TensorFlow, etc.
 └── README.md                     # Project overview and installation
+```
