@@ -1,0 +1,25 @@
+# Python
+__pycache__
+*.pyc
+*.pyd
+*.so
+venv/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Houdini Files
+*.hip
+*.hipnc
+*.geo
+*.bgeo
+*.hda
+
+# C++/CUDA artifacts
+*.o
+*.out
+*.exe
+*.dll
+*.lib
