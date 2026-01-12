@@ -1,0 +1,32 @@
+import hou
+import deepvex_bindings as dvx
+
+def run_solver():
+    geo = hou.pwd().geometry()
+    curr_frame = hou.frame()
+    reset_frame = hou.parm("reset_frame").eval()
+    state_name = hou.parm("state_name").eval()
+    
+    # 1. Get the current frame's input tensor (from ML_Input_SOP)
+    input_tensor_id = geo.attribValue("ml_tensor_ref")
+
+    # 2. Handle Initialization vs. Solving
+    if curr_frame <= reset_frame:
+        # Initial Frame: Just register the current input as the 'state'
+        dvx.set_temporal_state(state_name, input_tensor_id)
+        geo.setAttribValue("ml_solver_status", "Initialized")
+    else:
+        # Solving Frame: Get the state from the PREVIOUS frame
+        prev_state_id = dvx.get_temporal_state(state_name)
+        
+        # Run inference using BOTH current input and previous state
+        # (Assuming your model is trained for feedback/recurrent inputs)
+        new_state_id = dvx.run_feedback_inference(input_tensor_id, prev_state_id)
+        
+        # Update the memory for the NEXT frame
+        dvx.set_temporal_state(state_name, new_state_id)
+        
+        # Push results back to geometry
+        output_data = dvx.get_tensor_data(new_state_id)
+        geo.setPointFloatAttribValues("v", output_data)
+        geo.setAttribValue("ml_solver_status", "Solving")
