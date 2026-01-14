@@ -42,3 +42,35 @@ PYBIND11_MODULE(deepvex_bindings, m) {
     m.def("get_tensor_by_id", &deepvex::get_tensor);
     m.def("delete_tensor_by_id", &deepvex::remove_tensor);
 }
+
+// Add to core_interface.cpp
+
+int run_feedback_inference(int current_tensor_id, int previous_state_id) {
+    // 1. Retrieve both tensors from the Registry
+    auto& current_t = g_tensor_registry[current_tensor_id];
+    auto& previous_t = g_tensor_registry[previous_state_id];
+
+    // 2. Prepare for Inference
+    torch::NoGradGuard no_grad;
+    
+    // 3. Concatenate Tensors (Temporal Stacking)
+    // We stack them along the feature dimension (dim 1)
+    // If 'P' is (N, 3), the combined tensor becomes (N, 6)
+    torch::Tensor combined_input = torch::cat({current_t, previous_t}, 1);
+
+    // 4. Get the Model (Assuming we use the last loaded model for simplicity)
+    // In a complex sim, you'd pass a model_id here too
+    auto& model = g_model_registry.rbegin()->second; 
+
+    // 5. Forward Pass
+    std::vector<torch::jit::IValue> inputs;
+    inputs.push_back(combined_input.to(torch::kCUDA)); // Move to GPU for speed
+    
+    torch::Tensor result = model.forward(inputs).toTensor();
+
+    // 6. Return the new state ID
+    return deepvex::register_tensor(result.to(torch::kCPU));
+}
+
+// Add this to your PYBIND11_MODULE block:
+m.def("run_feedback_inference", &run_feedback_inference, "Runs inference using current and temporal tensors");
